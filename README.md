@@ -1,31 +1,49 @@
-# MONA Pay cho Google Sheets
+# MONA Pay for Google Sheets
 
-Apps Script gắn với một Google Sheet, thêm menu **MONA Pay → Đồng bộ** và có thể cài trigger chạy mỗi giờ. Script gọi API giao dịch theo VA, ghi tối đa 100 giao dịch/trang và bỏ qua bản ghi đã có theo `transaction_code`.
+A Google Apps Script that copies the incoming transactions of a MONA Pay virtual account into a Google Sheet, on demand or every hour, for tracking and reconciliation.
 
-## Cài vào Sheet
+## Install
 
-1. Tạo/mở Google Sheet đích, chọn **Extensions → Apps Script**.
-2. Chép `Code.gs` và `appsscript.json` vào project.
-3. Trong **Project Settings → Script Properties**, thêm:
-   - `MONAPAY_USERNAME`
-   - `MONAPAY_PASSWORD`
-   - `MONAPAY_VIRTUAL_ACCOUNT_NUMBER`
-   - `MONAPAY_BASE_URL` (không bắt buộc, mặc định `https://api.monapay.vn`)
-   - `MONAPAY_SHEET_NAME` (không bắt buộc, mặc định `MONA Pay Transactions`)
-4. Reload Sheet, chọn **MONA Pay → Đồng bộ** và cấp quyền lần đầu.
-5. Chọn **MONA Pay → Bật đồng bộ mỗi giờ** nếu muốn tạo time-driven trigger.
+1. Create or open the target Google Sheet and choose **Extensions → Apps Script**.
+2. Copy `Code.gs` and `appsscript.json` into the project (show `appsscript.json` via **Project Settings → Show "appsscript.json" manifest file in editor**).
+3. Add the Script Properties listed under Configuration.
+4. Reload the Sheet. A **MONA Pay** menu appears.
 
-Credential nằm trong Script Properties, không nằm trong ô Sheet. Chỉ chia sẻ quyền sửa Apps Script cho người được phép dùng tài khoản MONA Pay. Script chỉ gọi login và GET giao dịch, nên không cần Client Secret.
+## Quick start
 
-## Cách đồng bộ
+1. Choose **MONA Pay → Đồng bộ** (Sync) and grant the requested permissions the first time.
+2. To sync automatically, choose **MONA Pay → Bật đồng bộ mỗi giờ** (Enable hourly sync), which installs a time-driven trigger.
+3. **MONA Pay → Tắt đồng bộ tự động** (Disable automatic sync) removes the trigger; **Hướng dẫn cấu hình** (Setup guide) shows the required properties.
 
-- Trang 1 là giao dịch mới nhất; script đọc tối đa 100 trang trong lần đầu.
-- Khi gặp `transaction_code` đã có, script xử lý hết trang hiện tại rồi dừng.
-- Lock theo document ngăn hai lượt trigger ghi trùng; cột `transaction_code` là khoá chống trùng.
-- Sheet lưu cả tên trường payload webhook và alias từ API (`transaction_content`, `transaction_date`).
+## Configuration
 
-Google Apps Script không phải hệ thống chốt đơn real-time. Dùng Sheet để theo dõi/đối soát; luồng bán hàng vẫn cần webhook có HMAC, database transaction và unique constraint trên `transaction_code`.
+Set these in **Project Settings → Script Properties**:
 
-Tài liệu: https://monapay.vn/docs · llms: https://monapay.vn/llms.txt · Hotline 1900 636 648 · info@themona.global
+| Property | Required | Meaning |
+| --- | --- | --- |
+| `MONAPAY_USERNAME` | yes | MONA Pay username |
+| `MONAPAY_PASSWORD` | yes | MONA Pay password |
+| `MONAPAY_VIRTUAL_ACCOUNT_NUMBER` | yes | Virtual account (VA) to sync |
+| `MONAPAY_BASE_URL` | no | Defaults to `https://api.monapay.vn` |
+| `MONAPAY_SHEET_NAME` | no | Defaults to `MONA Pay Transactions` |
 
-**MONA Pay thuộc bộ MONA Cloud của The MONA Group.**
+Credentials live in Script Properties, not in Sheet cells. Give edit access to the Apps Script project only to people allowed to use the MONA Pay account. The script only logs in and reads transactions, so it does not need a Client Secret.
+
+The manifest requests these OAuth scopes: `spreadsheets.currentonly`, `script.external_request` and `script.scriptapp`.
+
+## Usage
+
+The sheet is created if missing, with the columns `transaction_code`, `amount`, `description`, `transfer_date`, `account_number`, `bank_name`, `type` and `synced_at`.
+
+How a sync works:
+
+- The script reads the VA's transactions 100 per page, newest first, up to 100 pages.
+- When it meets a `transaction_code` that is already in the sheet, it finishes the current page and stops.
+- New rows are appended oldest first.
+- A document lock stops two runs from writing at the same time, and the `transaction_code` column is the deduplication key.
+
+Apps Script is not a real-time order confirmation system. Use the sheet for tracking and reconciliation; a sales flow still needs an HMAC-verified webhook, a database transaction and a unique constraint on `transaction_code`.
+
+Documentation: https://monapay.vn/docs
+
+**MONA Pay is part of MONA Cloud by The MONA Group.**
