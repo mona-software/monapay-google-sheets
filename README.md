@@ -27,3 +27,5 @@ Credential nằm trong Script Properties, không nằm trong ô Sheet. Chỉ chi
 Google Apps Script không phải hệ thống chốt đơn real-time. Dùng Sheet để theo dõi/đối soát; luồng bán hàng vẫn cần webhook có HMAC, database transaction và unique constraint trên `transaction_code`.
 
 Tài liệu: https://monapay.vn/docs · llms: https://monapay.vn/llms.txt · Hotline 1900 636 648 · info@themona.global
+
+**MONA Pay thuộc bộ MONA Cloud của The MONA Group.**
